@@ -1,65 +1,73 @@
-let state = Array.from({length: 100}, (v, i) => false);
-let stopped = true;
-let intervalId;
-
 const BOARD_HEIGHT = 50;
 const BOARD_WIDTH = 50;
+
+const directions = [
+    [-1, -1], [0, -1], [1, -1],
+    [-1, 0], [1, 0],
+    [-1, 1], [0, 1], [1, 1]
+];
+let state = Array.from(
+    {length: BOARD_WIDTH},
+    () => Array.from({length: BOARD_HEIGHT}, () => false)
+);
+let stopped = true;
+let intervalId;
 
 const board = document.getElementById('board');
 for (let i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; i++) {
     const cell = document.createElement('div');
     cell.addEventListener('click', ({ target }) => {
-        state[i] = !target.classList.contains('alive');
+        const x = i % BOARD_WIDTH;
+        const y = Math.floor(i / BOARD_WIDTH);
+        state[x][y] = !target.classList.contains('alive');
         target.classList.toggle('alive');
     })
     board.appendChild(cell);
 }
 const cells = document.querySelectorAll('#board div');
 
-const countNeighbours = (i) => {
-    const x = i % BOARD_WIDTH;
-    const y = Math.floor(i / BOARD_WIDTH);
+const isValid = (x, y) => x >= 0 && y >= 0 && x < BOARD_WIDTH && y < BOARD_HEIGHT;
 
+const countNeighbours = (x, y) => {
     let livingNeighbours = 0;
-    if (state[i - 1] && x != 0)
-        livingNeighbours++;
-    if (state [i + 1] && x != BOARD_WIDTH - 1)
-        livingNeighbours++;
-    if (state[i - 1 - BOARD_WIDTH] && x != 0 && y != 0)
-        livingNeighbours++;
-    if (state[i - BOARD_WIDTH] && y != 0)
-        livingNeighbours++;
-    if (state[i + 1 - BOARD_WIDTH] && x != BOARD_WIDTH - 1 && y != 0)
-        livingNeighbours++;
-    if (state[i - 1 + BOARD_WIDTH] && x != 0 && y != BOARD_HEIGHT - 1)
-        livingNeighbours++;
-    if (state[i + BOARD_WIDTH] && y != BOARD_HEIGHT - 1)
-        livingNeighbours++;
-    if (state[i + 1 + BOARD_WIDTH] && x != BOARD_WIDTH - 1 && y != BOARD_HEIGHT - 1)
-        livingNeighbours++;
-
+    for (const [xOffset, yOffset] of directions) {
+        const newX = x + xOffset;
+        const newY = y + yOffset;
+        if (isValid(newX, newY) && state[newX][newY])
+            livingNeighbours++;
+    }
     return livingNeighbours;
 }
 
-const update = () => {
-    const newState = Array.from({length: 100}, (v, i) => false);
-
-    for (let i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
-        const livingNeighbours = countNeighbours(i);
-        if (state[i] && (livingNeighbours == 2 || livingNeighbours == 3))
-            newState[i] = true;
-        else if (!state[i] && livingNeighbours == 3)
-            newState[i] = true;
+const render = () => {
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+        for (let y = 0; y < BOARD_HEIGHT; y++) {
+            if (state[x][y])
+                cells[y * BOARD_WIDTH + x].classList.add('alive');
+            else
+                cells[y * BOARD_WIDTH + x].classList.remove('alive');
+        }
     }
-    
-    for (let i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
-        if (newState[i])
-            cells[i].classList.add('alive');
-        else
-            cells[i].classList.remove('alive');
+};
+
+const update = () => {
+    const newState = Array.from(
+        {length: BOARD_WIDTH},
+        () => Array.from({length: BOARD_HEIGHT}, () => false)
+    );
+
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+        for (let y = 0; y < BOARD_HEIGHT; y++) {
+            const livingNeighbours = countNeighbours(x, y);
+            if (state[x][y] && (livingNeighbours == 2 || livingNeighbours == 3))
+                newState[x][y] = true;
+            else if (!state[x][y] && livingNeighbours == 3)
+                newState[x][y] = true;
+        }
     }
 
     state = newState;
+    render();
 };
 
 const startButton = document.getElementById('start');
@@ -68,22 +76,16 @@ const nextButton = document.getElementById('next');
 
 nextButton.addEventListener('click', update);
 startButton.addEventListener('click', () => {
-    if (stopped) {
-        stopped = false;
-        startButton.classList.add('hidden');
-        stopButton.classList.remove('hidden');
-        nextButton.classList.add('hidden');
-
-        intervalId = setInterval(update, 500);
-    }
+    stopped = false;
+    startButton.classList.add('hidden');
+    stopButton.classList.remove('hidden');
+    nextButton.classList.add('hidden');
+    intervalId = setInterval(update, 500);
 });
 stopButton.addEventListener('click', () => {
-    if (!stopped) {
-        stopped = true;
-        startButton.classList.remove('hidden');
-        stopButton.classList.add('hidden');
-        nextButton.classList.remove('hidden');
-
-        clearInterval(intervalId);
-    }
+    stopped = true;
+    startButton.classList.remove('hidden');
+    stopButton.classList.add('hidden');
+    nextButton.classList.remove('hidden');
+    clearInterval(intervalId);
 });
