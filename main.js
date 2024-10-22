@@ -1,4 +1,6 @@
 let state = Array.from({length: 100}, (v, i) => false);
+let stopped = true;
+let intervalId;
 
 const BOARD_HEIGHT = 50;
 const BOARD_WIDTH = 50;
@@ -7,16 +9,12 @@ const board = document.getElementById('board');
 for (let i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; i++) {
     const cell = document.createElement('div');
     cell.addEventListener('click', ({ target }) => {
-        if (target.classList.contains('alive')) {
-            target.classList.remove('alive');
-            state[i] = false;
-        } else {
-            target.classList.add('alive');
-            state[i] = true;
-        } 
+        state[i] = !target.classList.contains('alive');
+        target.classList.toggle('alive');
     })
     board.appendChild(cell);
 }
+const cells = document.querySelectorAll('#board div');
 
 const countNeighbours = (i) => {
     const x = i % BOARD_WIDTH;
@@ -43,11 +41,9 @@ const countNeighbours = (i) => {
     return livingNeighbours;
 }
 
-const cells = document.querySelectorAll('#board div');
-document.getElementById('start').addEventListener('click', (event) => {
-    event.preventDefault();
-
+const update = () => {
     const newState = Array.from({length: 100}, (v, i) => false);
+
     for (let i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
         const livingNeighbours = countNeighbours(i);
         if (state[i] && (livingNeighbours == 2 || livingNeighbours == 3))
@@ -64,4 +60,30 @@ document.getElementById('start').addEventListener('click', (event) => {
     }
 
     state = newState;
+};
+
+const startButton = document.getElementById('start');
+const stopButton = document.getElementById('stop');
+const nextButton = document.getElementById('next');
+
+nextButton.addEventListener('click', update);
+startButton.addEventListener('click', () => {
+    if (stopped) {
+        stopped = false;
+        startButton.classList.add('hidden');
+        stopButton.classList.remove('hidden');
+        nextButton.classList.add('hidden');
+
+        intervalId = setInterval(update, 500);
+    }
+});
+stopButton.addEventListener('click', () => {
+    if (!stopped) {
+        stopped = true;
+        startButton.classList.remove('hidden');
+        stopButton.classList.add('hidden');
+        nextButton.classList.remove('hidden');
+
+        clearInterval(intervalId);
+    }
 });

@@ -21,3 +21,7 @@
 .alive {
     background-color: white !important;
 }
+
+.hidden {
+    display: none;
+}
