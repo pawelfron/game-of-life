@@ -12,6 +12,12 @@ let state = Array.from(
 );
 let stopped = true;
 let intervalId;
+let generation = 0;
+
+const startButton = document.getElementById('start');
+const stopButton = document.getElementById('stop');
+const nextButton = document.getElementById('next');
+const generationText = document.getElementById('generation');
 
 const board = document.getElementById('board');
 for (let i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; i++) {
@@ -25,6 +31,8 @@ for (let i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; i++) {
     board.appendChild(cell);
 }
 const cells = document.querySelectorAll('#board div');
+generationText.innerHTML = generation;
+
 
 const isValid = (x, y) => x >= 0 && y >= 0 && x < BOARD_WIDTH && y < BOARD_HEIGHT;
 
@@ -48,6 +56,8 @@ const render = () => {
                 cells[y * BOARD_WIDTH + x].classList.remove('alive');
         }
     }
+
+    generationText.innerHTML = generation;
 };
 
 const update = () => {
@@ -67,12 +77,9 @@ const update = () => {
     }
 
     state = newState;
+    generation++;
     render();
 };
-
-const startButton = document.getElementById('start');
-const stopButton = document.getElementById('stop');
-const nextButton = document.getElementById('next');
 
 nextButton.addEventListener('click', update);
 startButton.addEventListener('click', () => {
