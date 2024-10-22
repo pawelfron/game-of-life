@@ -1,44 +1,52 @@
 const BOARD_HEIGHT = 50;
 const BOARD_WIDTH = 50;
-
-const directions = [
+const DIRECTIONS = [
     [-1, -1], [0, -1], [1, -1],
     [-1, 0], [1, 0],
     [-1, 1], [0, 1], [1, 1]
 ];
+
 let state = Array.from(
     {length: BOARD_WIDTH},
     () => Array.from({length: BOARD_HEIGHT}, () => false)
 );
 let stopped = true;
+let setupPhase = true;
 let intervalId;
-let generation = 0;
+let generation = 1;
 
 const startButton = document.getElementById('start');
 const stopButton = document.getElementById('stop');
 const nextButton = document.getElementById('next');
+const resetButton = document.getElementById('reset');
 const generationText = document.getElementById('generation');
 
 const board = document.getElementById('board');
 for (let i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; i++) {
     const cell = document.createElement('div');
-    cell.addEventListener('click', ({ target }) => {
-        const x = i % BOARD_WIDTH;
-        const y = Math.floor(i / BOARD_WIDTH);
-        state[x][y] = !target.classList.contains('alive');
-        target.classList.toggle('alive');
-    })
     board.appendChild(cell);
 }
 const cells = document.querySelectorAll('#board div');
-generationText.innerHTML = generation;
 
+const manualFill = event => event.target.classList.toggle('alive');;
+
+const endSetupPhase = () => {
+    for (const cell of cells)
+        cell.removeEventListener('click', manualFill);
+
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+        for (let y = 0; y < BOARD_HEIGHT; y++) {
+            const i = y * BOARD_WIDTH + x
+            state[x][y] = cells[i].classList.contains('alive');
+        }
+    }
+}
 
 const isValid = (x, y) => x >= 0 && y >= 0 && x < BOARD_WIDTH && y < BOARD_HEIGHT;
 
 const countNeighbours = (x, y) => {
     let livingNeighbours = 0;
-    for (const [xOffset, yOffset] of directions) {
+    for (const [xOffset, yOffset] of DIRECTIONS) {
         const newX = x + xOffset;
         const newY = y + yOffset;
         if (isValid(newX, newY) && state[newX][newY])
@@ -78,17 +86,34 @@ const update = () => {
 
     state = newState;
     generation++;
-    render();
 };
 
-nextButton.addEventListener('click', update);
+nextButton.addEventListener('click', () => {
+    if (setupPhase) {
+        setupPhase = false;
+        endSetupPhase();
+    }
+
+    update();
+    render();
+});
+
 startButton.addEventListener('click', () => {
+    if (setupPhase) {
+        setupPhase = false;
+        endSetupPhase();
+    }
+
     stopped = false;
     startButton.classList.add('hidden');
     stopButton.classList.remove('hidden');
     nextButton.classList.add('hidden');
-    intervalId = setInterval(update, 500);
+    intervalId = setInterval(() => {
+        update();
+        render();
+    }, 500);
 });
+
 stopButton.addEventListener('click', () => {
     stopped = true;
     startButton.classList.remove('hidden');
@@ -96,3 +121,31 @@ stopButton.addEventListener('click', () => {
     nextButton.classList.remove('hidden');
     clearInterval(intervalId);
 });
+
+resetButton.addEventListener('click', () => {
+    stopped = true;
+    clearInterval(intervalId);
+
+    state = Array.from(
+        {length: BOARD_WIDTH},
+        () => Array.from({length: BOARD_HEIGHT}, () => false)
+    );
+
+    for (const cell of cells) {
+        cell.addEventListener('click', manualFill);
+        cell.classList.remove('alive');
+    }
+
+    generation = 1;
+    generationText.innerHTML = generation;
+
+    startButton.classList.remove('hidden');
+    stopButton.classList.add('hidden');
+    nextButton.classList.remove('hidden');
+
+    setupPhase = true;
+})
+
+for (const cell of cells)
+    cell.addEventListener('click', manualFill);
+generationText.innerHTML = generation;
