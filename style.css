@@ -26,6 +26,27 @@ body {
     background-color: black;
 }
 
+#control-panel {
+    width: 400px;
+    margin: 20px auto;
+    text-align: center;
+}
+
+#control-panel button {
+    width: 100px;
+    height: 35px;
+    background-color: #eee;
+    padding: 5px;
+    border: 1px solid black;
+    margin: 0 5px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#control-panel button:hover {
+    background-color: #aaa;
+}
+
 .alive {
     background-color: white !important;
 }
